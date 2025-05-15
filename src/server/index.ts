@@ -23,7 +23,9 @@ export default {
 		const pathname = new URL(request.url);
 
 		if (pathname.pathname === '/hello') {
-			return Response.json('world');
+			const squeal = "SELECT name FROM sqlite_schema WHERE type ='table'";
+			const result = await env.DB.prepare(squeal).all();
+			return Response.json(result);
 		}
 
 		return Response.json(pathname.pathname);
