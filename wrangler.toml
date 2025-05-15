@@ -1,10 +1,23 @@
 name = "scraper-worker"
-main = "src/index.ts"
+main = "src/server/index.ts"
 compatibility_date = "2025-05-10"
 compatibility_flags = [ "nodejs_compat"]
 
 browser = { binding = "MYBROWSER" }
 
+[[d1_databases]]
+binding = "DB"
+database_name = "scraper-db"
+database_id = "18f8ba31-bbef-4e02-bd35-71cd528e8e2d"
+
+[assets]
+directory = "src/client/"
+binding = "assets"
+
+#[triggers]
+#crons=["*/15 * * * *"]
+
 [[migrations]]
 tag = "v1"
 new_classes = ["Browser"]
+new_sqlite_classes = ["NewDbClass"]
