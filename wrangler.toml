@@ -1,23 +1,15 @@
 name = "droscra"
 main = "src/server/index.ts"
-compatibility_date = "2025-05-10"
-compatibility_flags = [ "nodejs_compat"]
+compatibility_date = "2025-05-07"
 
-browser = { binding = "MYBROWSER" }
-
-[[d1_databases]]
-binding = "DB"
-database_name = "droscra-d1"
-database_id = "ce2a7859-24a8-4257-ba8d-01cd37d9dd0d"
+[[durable_objects.bindings]]
+class_name = "DroscraObj"
+name = "DROSCRA_OBJ"
 
 [assets]
 directory = "src/client/"
 binding = "assets"
 
-#[triggers]
-#crons=["*/15 * * * *"]
-
 [[migrations]]
 tag = "v1"
-new_classes = ["Browser"]
-new_sqlite_classes = ["NewDroscraClass"]
+new_sqlite_classes = ["DroscraObj"]

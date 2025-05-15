@@ -1,3 +1,4 @@
-#speaker {
-  color: red;
+div {
+	display: flex;
+	direction: flex-row;
 }

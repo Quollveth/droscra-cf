@@ -1,15 +1,23 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HTML Boilerplate</title>
-    <link rel="stylesheet" href="index.css" />
-    <script src="index.js" defer="defer"></script>
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-  </head>
-  <body>
-    <h1 id="speaker">Hello</h1>
-    <button hx-post="/hello" hx-swap="outerHTML">Click Me</button>
-  </body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>HTML Boilerplate</title>
+		<link rel="stylesheet" href="index.css" />
+		<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+	</head>
+	<body>
+		<div>
+			<form hx-target="#dataGoesHere" hx-post="/save">
+				<input name="data" type="text" />
+				<input type="submit" value="save" />
+			</form>
+			<p id="dataGoesHere"></p>
+		</div>
+		<div>
+			<button hx-trigger="click" hx-get="/load" hx-target="#dataGoesHereTwo">Load</button>
+			<p id="dataGoesHereTwo"></p>
+		</div>
+	</body>
 </html>
