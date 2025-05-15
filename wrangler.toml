@@ -1,14 +1,13 @@
-name = "scraper-worker"
+name = "droscra"
 main = "src/server/index.ts"
 compatibility_date = "2025-05-10"
 compatibility_flags = [ "nodejs_compat"]
 
 browser = { binding = "MYBROWSER" }
-
 [[d1_databases]]
 binding = "DB"
-database_name = "scraper-db"
-database_id = "18f8ba31-bbef-4e02-bd35-71cd528e8e2d"
+database_name = "droscra-d1"
+database_id = "ce2a7859-24a8-4257-ba8d-01cd37d9dd0d"
 
 [assets]
 directory = "src/client/"
@@ -20,4 +19,4 @@ binding = "assets"
 [[migrations]]
 tag = "v1"
 new_classes = ["Browser"]
-new_sqlite_classes = ["NewDbClass"]
+new_sqlite_classes = ["NewDroscraClass"]
