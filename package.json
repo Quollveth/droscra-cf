@@ -3,6 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
+		"build": "tsc -b && vite build --config src/client/vite.config.ts",
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
@@ -12,9 +13,20 @@
 		"@cloudflare/workers-types": "^4.20250510.0",
 		"@types/node": "^22.15.17",
 		"typescript": "^5.5.2",
-		"wrangler": "^4.14.4"
+		"wrangler": "^4.14.4",
+		"@eslint/js": "^9.25.0",
+		"@types/react": "^19.1.2",
+		"@types/react-dom": "^19.1.2",
+		"@vitejs/plugin-react": "^4.4.1",
+		"eslint": "^9.25.0",
+		"eslint-plugin-react-hooks": "^5.2.0",
+		"eslint-plugin-react-refresh": "^0.4.19",
+		"typescript-eslint": "^8.30.1",
+		"vite": "^6.3.5"
 	},
 	"dependencies": {
-		"@cloudflare/puppeteer": "^1.0.2"
+		"@cloudflare/puppeteer": "^1.0.2",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0"
 	}
 }

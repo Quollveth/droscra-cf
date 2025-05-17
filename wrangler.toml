@@ -6,8 +6,11 @@ compatibility_date = "2025-05-07"
 class_name = "DroscraObj"
 name = "DROSCRA_OBJ"
 
+[build]
+command = "npm run build"
+
 [assets]
-directory = "src/client/"
+directory = "./public"
 binding = "assets"
 
 [[migrations]]
