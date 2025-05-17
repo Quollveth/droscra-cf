@@ -10,7 +10,7 @@ name = "DROSCRA_OBJ"
 command = "npm run build"
 
 [assets]
-directory = "./public"
+directory = "./build"
 binding = "assets"
 
 [[migrations]]
