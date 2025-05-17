@@ -5,7 +5,7 @@ import './assets/main.css';
 function App() {
 	return (
 		<StrictMode>
-			<h1>Hello, World!</h1>
+			<h1 className="text-red-600">Hello, World!</h1>
 		</StrictMode>
 	);
 }

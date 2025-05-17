@@ -1,19 +1,32 @@
 {
 	"compilerOptions": {
+	"target": "es2021",
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+	"jsx": "react-jsx",
+	"module": "ESNext",
+    "useDefineForClassFields": true,
+
+    /* Bundler mode */
     "allowImportingTsExtensions": true,
-		"target": "es2021",
-	    "lib": ["ES2021", "DOM", "DOM.Iterable"],
-		"jsx": "react-jsx",
-		"module": "es2022",
-		"moduleResolution": "node",
-		"resolveJsonModule": true,
-		"allowJs": true,
-		"checkJs": false,
-		"noEmit": true,
-		"isolatedModules": true,
-		"allowSyntheticDefaultImports": true,
-		"forceConsistentCasingInFileNames": true,
-		"strict": true,
-		"skipLibCheck": true
-	}
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+	"moduleResolution": "bundler",
+	"resolveJsonModule": true,
+	"allowJs": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "erasableSyntaxOnly": true,
+	"allowSyntheticDefaultImports": true,
+	"forceConsistentCasingInFileNames": true,
+	"skipLibCheck": true,
+	"noEmit": true,
+	"isolatedModules": true,
+	"checkJs": false,
+	"strict": true
+  }
 }
+
