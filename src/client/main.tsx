@@ -5,12 +5,12 @@ import './assets/main.css';
 import Swal from 'sweetalert2';
 
 import { AppContext, EmptyData, type AppData } from './context';
-import { UploadIcon } from './assets/uploadIcon';
 import { AddIcon } from './assets/addIcon';
 import { RemoveIcon } from './assets/removeIcon';
 import { CheckIcon } from './assets/checkIcon';
-import { ApiDeleteQuery, ApiGetQueries, ApiSaveQueries } from './api';
+import { ApiDeleteQuery, ApiGetQueries, ApiSaveQuery } from './api';
 import type { QueriesRow } from '../shared';
+import { SyncIcon } from './assets/syncIcon';
 
 function showError(e: string) {
 	Swal.fire({
@@ -36,28 +36,33 @@ function ControlPanel() {
 		}
 
 		const copy = [...data.queries];
-		copy.push({ query: q, items: 0, selected: false });
+		const newq: QueriesRow = { query: q, items: 0 };
+		copy.push({ ...newq, selected: false });
+
+		const suc = await ApiSaveQuery(newq);
+		if (!suc) {
+			showError('Error saving query');
+			return;
+		}
+
 		setData((prev) => {
 			return { ...prev, queries: copy };
 		});
 	}
 
-	async function saveQueries() {
-		const suc = await ApiSaveQueries(data.queries);
-		if (!suc) {
-			showError('Error saving queries');
-		}
+	async function fullSync() {
+		location.reload();
 	}
 
 	return (
 		<ul className="space-y-1 p-1 w-full max-w-xs">
 			<li>
 				<button
-					onClick={saveQueries}
+					onClick={fullSync}
 					className="flex cursor-pointer items-center justify-between w-full space-x-2 p-2 text-sm bg-amber-100 hover:bg-amber-200 rounded text-amber-700 border border-amber-200"
 				>
-					<p>Save Queries</p>
-					<UploadIcon />
+					<p>Sync</p>
+					<SyncIcon />
 				</button>
 			</li>
 			<li>
@@ -87,11 +92,13 @@ function QueriesTable() {
 	async function removeQuery(idx: number) {
 		const copy = [...data.queries];
 		const removed = copy.splice(idx, 1);
+
 		const suc = await ApiDeleteQuery(removed[0]);
 		if (!suc) {
 			showError('Error deleting query');
 			return;
 		}
+
 		setData((prev) => {
 			return { ...prev, queries: copy };
 		});

@@ -2,7 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 import {
 	ENDPOINT_DELETE_QUERY,
 	ENDPOINT_GET_QUERIES,
-	ENDPOINT_SAVE_QUERIES,
+	ENDPOINT_SAVE_QUERY,
 	type ItemsRow,
 	type QueriesRow,
 } from '../shared';
@@ -191,12 +191,12 @@ async function HandleEndpoint(
 			const result = await stub.queriesGet();
 			return jsonResponse(result);
 
-		case ENDPOINT_SAVE_QUERIES:
+		case ENDPOINT_SAVE_QUERY:
 			//prettier-ignore
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
-			const qta: QueriesRow[] = await req.json();
+			const qta: QueriesRow = await req.json();
 			//TODO: valdiate
-			return maybeResponse(await stub.queriesAddBatch(qta));
+			return maybeResponse(await stub.queriesAdd(qta));
 
 		case ENDPOINT_DELETE_QUERY:
 			//prettier-ignore

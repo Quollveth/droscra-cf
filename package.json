@@ -6,7 +6,7 @@
 	"scripts": {
 		"build": "tsc -b && vite build",
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev --env staging",
+		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"cf-typegen": "wrangler types"
 	},

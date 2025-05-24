@@ -3,6 +3,7 @@ import {
 	ENDPOINT_SAVE_QUERIES,
 	ENDPOINT_GET_QUERIES,
 	ENDPOINT_DELETE_QUERY,
+	ENDPOINT_SAVE_QUERY,
 } from '../shared';
 
 export async function ApiGetQueries(): Promise<QueriesRow[]> {
@@ -38,6 +39,27 @@ export async function ApiSaveQueries(queries: QueriesRow[]): Promise<boolean> {
 
 		if (!response.ok) {
 			throw new Error(`Failed to save queries: ${response.statusText}`);
+		}
+
+		return true;
+	} catch (error) {
+		console.error('ApiSaveQueries error:', error);
+		return false;
+	}
+}
+
+export async function ApiSaveQuery(query: QueriesRow): Promise<boolean> {
+	try {
+		const response = await fetch(ENDPOINT_SAVE_QUERY, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(query),
+		});
+
+		if (!response.ok) {
+			throw new Error(`Failed to save query: ${response.statusText}`);
 		}
 
 		return true;

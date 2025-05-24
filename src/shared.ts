@@ -1,3 +1,6 @@
+// QueriesRow -> void
+export const ENDPOINT_SAVE_QUERY = '/api/addQuery';
+
 // QueriesRow[] -> void
 export const ENDPOINT_SAVE_QUERIES = '/api/addQueries';
 
