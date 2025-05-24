@@ -4,12 +4,24 @@ import './assets/main.css';
 
 import Swal from 'sweetalert2';
 
-import { AppContext, EmptyData } from './context';
+import { AppContext, EmptyData, type AppData } from './context';
 import { UploadIcon } from './assets/uploadIcon';
 import { AddIcon } from './assets/addIcon';
 import { RemoveIcon } from './assets/removeIcon';
 import { CheckIcon } from './assets/checkIcon';
-import { ApiSaveQueries } from './api';
+import { ApiDeleteQuery, ApiGetQueries, ApiSaveQueries } from './api';
+import type { QueriesRow } from '../shared';
+
+function showError(e: string) {
+	Swal.fire({
+		title: e,
+		icon: 'error',
+		toast: true,
+		position: 'top-end',
+		timer: 5000,
+		showConfirmButton: false,
+	});
+}
 
 function ControlPanel() {
 	const [data, setData] = useContext(AppContext);
@@ -33,14 +45,7 @@ function ControlPanel() {
 	async function saveQueries() {
 		const suc = await ApiSaveQueries(data.queries);
 		if (!suc) {
-			Swal.fire({
-				title: 'Error saving queries',
-				icon: 'error',
-				toast: true,
-				position: 'top-end',
-				timer: 5000,
-				showConfirmButton: false,
-			});
+			showError('Error saving queries');
 		}
 	}
 
@@ -79,9 +84,14 @@ function QueriesTable() {
 		});
 	}
 
-	function removeQuery(idx: number) {
+	async function removeQuery(idx: number) {
 		const copy = [...data.queries];
-		copy.splice(idx, 1);
+		const removed = copy.splice(idx, 1);
+		const suc = await ApiDeleteQuery(removed[0]);
+		if (!suc) {
+			showError('Error deleting query');
+			return;
+		}
 		setData((prev) => {
 			return { ...prev, queries: copy };
 		});
@@ -124,8 +134,10 @@ function QueriesTable() {
 	);
 }
 
+const reduxAtHome: AppData = EmptyData();
+
 function App() {
-	const [data, setData] = useState(EmptyData());
+	const [data, setData] = useState(reduxAtHome);
 
 	return (
 		<StrictMode>
@@ -139,4 +151,12 @@ function App() {
 	);
 }
 
-createRoot(document.getElementById('root')!).render(<App />);
+ApiGetQueries().then((value) => {
+	if (value.length !== 0) {
+		reduxAtHome.queries = value.map((q) => {
+			return { ...q, selected: false };
+		});
+	}
+
+	createRoot(document.getElementById('root')!).render(<App />);
+});

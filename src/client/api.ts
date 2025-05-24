@@ -1,5 +1,9 @@
 import type { QueriesRow } from '../shared';
-import { ENDPOINT_SAVE_QUERIES, ENDPOINT_GET_QUERIES } from '../shared';
+import {
+	ENDPOINT_SAVE_QUERIES,
+	ENDPOINT_GET_QUERIES,
+	ENDPOINT_DELETE_QUERY,
+} from '../shared';
 
 export async function ApiGetQueries(): Promise<QueriesRow[]> {
 	try {
@@ -39,6 +43,27 @@ export async function ApiSaveQueries(queries: QueriesRow[]): Promise<boolean> {
 		return true;
 	} catch (error) {
 		console.error('ApiSaveQueries error:', error);
+		return false;
+	}
+}
+
+export async function ApiDeleteQuery(query: QueriesRow): Promise<boolean> {
+	try {
+		const response = await fetch(ENDPOINT_DELETE_QUERY, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ id: query.query }),
+		});
+
+		if (!response.ok) {
+			throw new Error(`Failed to delete query: ${response.statusText}`);
+		}
+
+		return true;
+	} catch (error) {
+		console.error('ApiDeleteQuery error:', error);
 		return false;
 	}
 }

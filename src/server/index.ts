@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
+	ENDPOINT_DELETE_QUERY,
 	ENDPOINT_GET_QUERIES,
 	ENDPOINT_SAVE_QUERIES,
 	type ItemsRow,
@@ -58,22 +59,29 @@ export class DroscraObj extends DurableObject<Env> {
 	}
 
 	async queriesAddBatch(qArr: QueriesRow[]): Promise<Error | null> {
-		console.log('received queries to save: ', qArr);
-
 		try {
-			this.storage.transaction(async (txn) => {
-				for (const q of qArr) {
-					await txn.put({
-						query: q.query,
-						items: q.items,
-					});
-				}
+			qArr.forEach((q) => {
+				this.storage.sql.exec(
+					'INSERT OR REPLACE INTO queries (query, items) VALUES (?, ?);',
+					q.query,
+					q.items,
+				);
 			});
 
 			return null;
 		} catch (e) {
 			console.error('queriesAddBatch error:', e);
 			return new Error('Error saving queries');
+		}
+	}
+
+	async queriesDelete(id: string): Promise<Error | null> {
+		try {
+			this.storage.sql.exec('DELETE FROM queries WHERE query = ?;', [id]);
+			return null;
+		} catch (e) {
+			console.error('queriesDelete error:', e);
+			return new Error('Error deleting query');
 		}
 	}
 
@@ -186,13 +194,16 @@ async function HandleEndpoint(
 		case ENDPOINT_SAVE_QUERIES:
 			//prettier-ignore
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
-			const data: QueriesRow[] = await req.json();
+			const qta: QueriesRow[] = await req.json();
 			//TODO: valdiate
+			return maybeResponse(await stub.queriesAddBatch(qta));
 
+		case ENDPOINT_DELETE_QUERY:
 			//prettier-ignore
-			return maybeResponse(
-				await stub.queriesAddBatch(data as QueriesRow[]),
-			);
+			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
+			const qtd: { id: string } = await req.json();
+			const qitd = qtd.id;
+			return maybeResponse(await stub.queriesDelete(qitd));
 
 		default:
 			return new Response(null, { status: 404, statusText: 'Invalid endpoint' });
