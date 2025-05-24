@@ -18,8 +18,7 @@ const DB_CREATE_QUERY = `
 		image TEXT,
 		price REAL,
 		query TEXT
-	);
-`;
+	);`;
 
 export class DroscraObj extends DurableObject<Env> {
 	storage: DurableObjectStorage;
@@ -149,13 +148,13 @@ export class DroscraObj extends DurableObject<Env> {
 	}
 }
 
-const RESP_EMPTY_OK = new Response(null, { status: 200 });
+const RESP_EMPTY_OK = new Response(null, { status: 204 });
 const RESP_UNSUPPORTED = new Response(null, {
-	status: 403,
+	status: 405,
 	statusText: 'This endpoint does not support this method',
 });
 
-async function maybeResponse(error: Promise<Error | null>): Promise<Response> {
+function maybeResponse(error: Error | null): Response {
 	if (error === null) {
 		return RESP_EMPTY_OK;
 	}
@@ -164,6 +163,11 @@ async function maybeResponse(error: Promise<Error | null>): Promise<Response> {
 		status: 500,
 		statusText: 'Internal Server Error',
 	});
+}
+function jsonResponse(data: any): Response {
+	// exists in case headers (like cors) need to be setup for all responses
+	const resp = Response.json(data);
+	return resp;
 }
 
 async function HandleEndpoint(
@@ -177,7 +181,7 @@ async function HandleEndpoint(
 			//prettier-ignore
 			if(req.method !== 'GET'){return RESP_UNSUPPORTED}
 			const result = await stub.queriesGet();
-			return Response.json(result);
+			return jsonResponse(result);
 
 		case ENDPOINT_SAVE_QUERIES:
 			//prettier-ignore
@@ -187,7 +191,7 @@ async function HandleEndpoint(
 
 			//prettier-ignore
 			return maybeResponse(
-				stub.queriesAddBatch(data as QueriesRow[]),
+				await stub.queriesAddBatch(data as QueriesRow[]),
 			);
 
 		default:
@@ -197,19 +201,6 @@ async function HandleEndpoint(
 
 export default {
 	async fetch(request, env): Promise<Response> {
-		if (!env.DEBUG) {
-			if (request.method === 'OPTIONS') {
-				return new Response(null, {
-					status: 204,
-					headers: {
-						'Access-Control-Allow-Origin': env.ORIGIN,
-						'Access-Control-Allow-Methods': 'POST, OPTIONS',
-						'Access-Control-Allow-Headers': 'Content-Type',
-					},
-				});
-			}
-		}
-
 		const id: DurableObjectId = env.DROSCRA_OBJ.idFromName('object');
 		const stub = env.DROSCRA_OBJ.get(id);
 
