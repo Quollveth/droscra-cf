@@ -1,12 +1,12 @@
 {
-	"name": "scraper-worker",
+	"name": "droscra",
 	"type": "module",
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
 		"build": "tsc -b && vite build",
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
+		"dev": "wrangler dev --env staging",
 		"start": "wrangler dev",
 		"cf-typegen": "wrangler types"
 	},
@@ -30,6 +30,7 @@
 		"@tailwindcss/vite": "^4.1.7",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
+		"sweetalert2": "^11.21.2",
 		"tailwindcss": "^4.1.7"
 	}
 }

@@ -2,6 +2,10 @@ name = "droscra"
 main = "src/server/index.ts"
 compatibility_date = "2025-05-07"
 
+[env.staging.vars]
+DEBUG = true
+ORIGIN = ""
+
 [[durable_objects.bindings]]
 class_name = "DroscraObj"
 name = "DROSCRA_OBJ"

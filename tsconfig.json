@@ -15,10 +15,7 @@
 	"allowJs": true,
 
     /* Linting */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-
     "erasableSyntaxOnly": true,
 	"allowSyntheticDefaultImports": true,
 	"forceConsistentCasingInFileNames": true,
