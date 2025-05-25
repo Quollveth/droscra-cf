@@ -1,4 +1,4 @@
-import { StrictMode, useContext, useRef, useState } from 'react';
+import React, { StrictMode, useContext, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './assets/main.css';
 
@@ -11,12 +11,12 @@ import { CheckIcon } from './assets/checkIcon';
 import {
 	ApiDeleteItem,
 	ApiDeleteQuery,
-	ApiGetItems,
 	ApiGetItemsQueries,
 	ApiGetQueries,
+	ApiRenameItem,
 	ApiSaveQuery,
 } from './api';
-import type { ItemsRow, QueriesRow } from '../shared';
+import type { QueriesRow } from '../shared';
 import { SyncIcon } from './assets/syncIcon';
 import { RightIcon } from './assets/rightIcon';
 import { LeftIcon } from './assets/leftIcon';
@@ -171,9 +171,13 @@ function QueriesTable() {
 	);
 }
 
-type ItemCardProps = { item: Item; onDelete: (id: number) => void };
+type ItemCardProps = {
+	item: Item;
+	onDelete: (id: number) => void;
+	onRename: (id: number, name: string) => void;
+};
 
-function ItemCard({ item, onDelete }: ItemCardProps) {
+function ItemCard({ item, onDelete, onRename }: ItemCardProps) {
 	return (
 		<div className="relative flex-shrink-0 w-48 p-4 bg-white rounded-2xl shadow-md hover:shadow-lg transition">
 			<button
@@ -189,11 +193,35 @@ function ItemCard({ item, onDelete }: ItemCardProps) {
 					alt={item.name}
 					className="w-full h-32 object-cover rounded-xl mb-2"
 				/>
-				<h3 className="text-lg font-semibold truncate">{item.name}</h3>
-				<p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
 			</a>
+
+			<input
+				defaultValue={item.name}
+				className="text-lg font-semibold truncate"
+				onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+					onRename(item.id, e.target.value);
+				}}
+			/>
+			<p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
 		</div>
 	);
+}
+
+type Procedure = (...args: any[]) => void;
+function debounce<T extends Procedure>(callback: T, wait: number): T {
+	let timeoutId: number | null = null;
+
+	const debouncedFunction = (...args: Parameters<T>) => {
+		if (timeoutId !== null) {
+			clearTimeout(timeoutId);
+		}
+
+		timeoutId = window.setTimeout(() => {
+			callback(...args);
+		}, wait);
+	};
+
+	return debouncedFunction as T;
 }
 
 export default function ItemsCarousel() {
@@ -209,12 +237,21 @@ export default function ItemsCarousel() {
 			return;
 		}
 		const copy = [...data.items];
-		copy.splice(rix,1);
+		copy.splice(rix, 1);
 
 		setData((prev) => {
 			return { ...prev, items: copy };
 		});
 	}
+
+	async function renameItem(id: number, name: string) {
+		await ApiRenameItem(id,name);
+	}
+
+	const debouncedRename = useMemo(
+		() => debounce((id: number, name: string) => renameItem(id, name), 300),
+		[],
+	);
 
 	const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -242,7 +279,12 @@ export default function ItemsCarousel() {
 			<div ref={carouselRef} className="overflow-x-auto scrollbar-hide">
 				<div className="flex space-x-4 py-4">
 					{items.map((item) => (
-						<ItemCard key={item.id} item={item} onDelete={deleteItem} />
+						<ItemCard
+							key={item.id}
+							item={item}
+							onDelete={deleteItem}
+							onRename={debouncedRename}
+						/>
 					))}
 				</div>
 			</div>

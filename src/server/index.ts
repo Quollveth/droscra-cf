@@ -5,6 +5,7 @@ import {
 	ENDPOINT_GET_ITEMS,
 	ENDPOINT_GET_ITEMS_QUERIES,
 	ENDPOINT_GET_QUERIES,
+	ENDPOINT_RENAME_ITEM,
 	ENDPOINT_SAVE_QUERY,
 	type ItemsRow,
 	type QueriesRow,
@@ -247,7 +248,7 @@ async function HandleEndpoint(
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
 
 			const qts: string[] = await req.json();
-			if (qts.length === 0){
+			if (qts.length === 0) {
 				return RESP_EMPTY_OK;
 			}
 
@@ -256,6 +257,15 @@ async function HandleEndpoint(
 			}
 
 			return jsonResponse(await stub.itemsGetFromQueries(qts));
+
+		case ENDPOINT_RENAME_ITEM:
+			//prettier-ignore
+			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
+
+			const dtr: { id: number; name: string } = await req.json();
+			console.log(`Rename item with id ${dtr.id} to ${dtr.name}`);
+			return RESP_EMPTY_OK;
+			return maybeResponse(await stub.itemsRename(dtr.id, dtr.name));
 
 		case '/testing':
 			const ATI = await stub.itemsGetAll();
