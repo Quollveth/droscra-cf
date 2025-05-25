@@ -13,6 +13,15 @@ export const ENDPOINT_DELETE_QUERY = '/api/deleteQuery';
 // void -> ItemsRow[]
 export const ENDPOINT_GET_ITEMS = '/api/getItems';
 
+// {id:integer} ->  void
+export const ENDPOINT_DELETE_ITEM = '/api/deleteItem';
+
+// {id:string[]} -> ItemsRow[]
+export const ENDPOINT_GET_ITEMS_QUERIES = '/api/getItemsQueries';
+
+// {id:integer, name:string} -> void
+export const ENDPOINT_RENAME_ITEM = '/api/renameItem';
+
 type integer = number;
 type url = string;
 

@@ -1,7 +1,9 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
+	ENDPOINT_DELETE_ITEM,
 	ENDPOINT_DELETE_QUERY,
 	ENDPOINT_GET_ITEMS,
+	ENDPOINT_GET_ITEMS_QUERIES,
 	ENDPOINT_GET_QUERIES,
 	ENDPOINT_SAVE_QUERY,
 	type ItemsRow,
@@ -78,7 +80,7 @@ export class DroscraObj extends DurableObject<Env> {
 
 	async queriesDelete(id: string): Promise<Error | null> {
 		try {
-			this.storage.sql.exec('DELETE FROM queries WHERE query = ?;', [id]);
+			this.storage.sql.exec('DELETE FROM queries WHERE query = ?;', id);
 			return null;
 		} catch (e) {
 			console.error('queriesDelete error:', e);
@@ -102,10 +104,8 @@ export class DroscraObj extends DurableObject<Env> {
 		return rows;
 	}
 
-	async itemsGetFromQuery(q: QueriesRow): Promise<ItemsRow[]> {
-		const result = this.storage.sql.exec('SELECT * FROM items WHERE query = ?;', [
-			q.query,
-		]);
+	async itemsGetFromQuery(q: string): Promise<ItemsRow[]> {
+		const result = this.storage.sql.exec('SELECT * FROM items WHERE query = ?;', q);
 		const rows: ItemsRow[] = [];
 		for await (const row of result) {
 			rows.push({
@@ -120,11 +120,37 @@ export class DroscraObj extends DurableObject<Env> {
 		return rows;
 	}
 
+	async itemsGetFromQueries(q: string[]): Promise<ItemsRow[]> {
+		const placeholders = q.map(() => '?').join(', ');
+
+		const sql = `SELECT * FROM items WHERE query IN (${placeholders});`;
+
+		const result = this.storage.sql.exec(sql, ...q);
+
+		const rows: ItemsRow[] = [];
+		for await (const row of result) {
+			rows.push({
+				id: row['id'] as number,
+				name: row['name'] as string,
+				url: row['url'] as string,
+				image: row['image'] as string,
+				price: row['price'] as number,
+				query: row['query'] as string,
+			});
+		}
+
+		return rows;
+	}
+
 	async itemsAdd(i: ItemsRow): Promise<Error | null> {
 		try {
 			this.storage.sql.exec(
 				'INSERT INTO items (name, url, image, price, query) VALUES (?, ?, ?, ?, ?);',
-				[i.name, i.url, i.image, i.price, i.query],
+				i.name,
+				i.url,
+				i.image,
+				i.price,
+				i.query,
 			);
 			return null;
 		} catch (e) {
@@ -133,12 +159,9 @@ export class DroscraObj extends DurableObject<Env> {
 		}
 	}
 
-	async itemsUpdate(id: number, data: ItemsRow): Promise<Error | null> {
+	async itemsRename(id: number, name: string): Promise<Error | null> {
 		try {
-			this.storage.sql.exec(
-				'UPDATE items SET name = ?, url = ?, image = ?, price = ?, query = ? WHERE id = ?;',
-				[data.name, data.url, data.image, data.price, data.query, id],
-			);
+			this.storage.sql.exec('UPDATE items SET name = ? WHERE id = ?;', name, id);
 			return null;
 		} catch (e) {
 			console.error('Error in itemsUpdate:', e);
@@ -148,7 +171,7 @@ export class DroscraObj extends DurableObject<Env> {
 
 	async itemsDelete(id: number): Promise<Error | null> {
 		try {
-			this.storage.sql.exec('DELETE FROM items WHERE id = ?;', [id]);
+			this.storage.sql.exec('DELETE FROM items WHERE id = ?;', id);
 			return null;
 		} catch (e) {
 			console.error('itemsDelete error:', e);
@@ -179,23 +202,6 @@ function jsonResponse(data: any): Response {
 	return resp;
 }
 
-const fakeItems = (function (): ItemsRow[] {
-	const toRet: ItemsRow[] = [];
-
-	for (let i = 0; i < 10; i++) {
-		toRet.push({
-			id: i,
-			name: `ITEM ${i} NAME`,
-			url: '',
-			image: `https://picsum.photos/id/${i * 3}/200/300`,
-			price: 7.6 * i,
-			query: '',
-		});
-	}
-
-	return toRet;
-})();
-
 async function HandleEndpoint(
 	req: Request,
 	stub: DurableObjectStub<DroscraObj>,
@@ -206,8 +212,7 @@ async function HandleEndpoint(
 		case ENDPOINT_GET_QUERIES:
 			//prettier-ignore
 			if(req.method !== 'GET'){return RESP_UNSUPPORTED}
-			const result = await stub.queriesGet();
-			return jsonResponse(result);
+			return jsonResponse(await stub.queriesGet());
 
 		case ENDPOINT_SAVE_QUERY:
 			//prettier-ignore
@@ -220,13 +225,52 @@ async function HandleEndpoint(
 			//prettier-ignore
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
 			const qtd: { id: string } = await req.json();
+			//TODO: valdiate
 			const qitd = qtd.id;
 			return maybeResponse(await stub.queriesDelete(qitd));
 
 		case ENDPOINT_GET_ITEMS:
 			//prettier-ignore
 			if(req.method !== 'GET'){return RESP_UNSUPPORTED}
-			return Response.json(fakeItems);
+			return jsonResponse(await stub.itemsGetAll());
+
+		case ENDPOINT_DELETE_ITEM:
+			//prettier-ignore
+			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
+			const itd: { id: number } = await req.json();
+			//TODO: valdiate
+			const iitd = itd.id;
+			return maybeResponse(await stub.itemsDelete(iitd));
+
+		case ENDPOINT_GET_ITEMS_QUERIES:
+			//prettier-ignore
+			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
+
+			const qts: string[] = await req.json();
+			if (qts.length === 0){
+				return RESP_EMPTY_OK;
+			}
+
+			if (qts.length === 1) {
+				return jsonResponse(await stub.itemsGetFromQuery(qts[0]));
+			}
+
+			return jsonResponse(await stub.itemsGetFromQueries(qts));
+
+		case '/testing':
+			const ATI = await stub.itemsGetAll();
+			const IOLI = ATI[ATI.length - 1].id;
+
+			await stub.itemsAdd({
+				id: IOLI + 1,
+				image: `https://picsum.photos/id/${Math.floor(Math.random() * 300)}/200/300`,
+				price: 69,
+				name: 'Testing item for testing purposes',
+				url: `https://item-${IOLI}`,
+				query: 'another test',
+			});
+
+			return RESP_EMPTY_OK;
 
 		default:
 			return new Response(null, { status: 404, statusText: 'Invalid endpoint' });

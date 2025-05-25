@@ -8,11 +8,19 @@ import { AppContext, EmptyData, type AppData, type Item } from './context';
 import { AddIcon } from './assets/addIcon';
 import { RemoveIcon } from './assets/removeIcon';
 import { CheckIcon } from './assets/checkIcon';
-import { ApiDeleteQuery, ApiGetItems, ApiGetQueries, ApiSaveQuery } from './api';
+import {
+	ApiDeleteItem,
+	ApiDeleteQuery,
+	ApiGetItems,
+	ApiGetItemsQueries,
+	ApiGetQueries,
+	ApiSaveQuery,
+} from './api';
 import type { ItemsRow, QueriesRow } from '../shared';
 import { SyncIcon } from './assets/syncIcon';
 import { RightIcon } from './assets/rightIcon';
 import { LeftIcon } from './assets/leftIcon';
+import { DownloadIcon } from './assets/downloadIcon';
 
 function showError(e: string) {
 	Swal.fire({
@@ -56,6 +64,16 @@ function ControlPanel() {
 		location.reload();
 	}
 
+	async function getItems() {
+		const selected = data.queries.filter((q) => q.selected).map((q) => q.query);
+
+		const fetched = await ApiGetItemsQueries(selected);
+
+		setData((prev) => {
+			return { ...prev, items: fetched };
+		});
+	}
+
 	return (
 		<ul className="space-y-1 p-1 w-full max-w-xs">
 			<li>
@@ -74,6 +92,16 @@ function ControlPanel() {
 				>
 					<p>Add Query</p>
 					<AddIcon />
+				</button>
+			</li>
+
+			<li>
+				<button
+					onClick={getItems}
+					className="flex cursor-pointer items-center justify-between w-full space-x-2 p-2 text-sm bg-pink-100 hover:bg-pink-200 rounded text-pink-700 border border-pink-200"
+				>
+					<p>Get Items</p>
+					<DownloadIcon />
 				</button>
 			</li>
 		</ul>
@@ -143,26 +171,50 @@ function QueriesTable() {
 	);
 }
 
-function ItemCard({ item }: { item: Item }) {
+type ItemCardProps = { item: Item; onDelete: (id: number) => void };
+
+function ItemCard({ item, onDelete }: ItemCardProps) {
 	return (
-		<a
-			href={item.url}
-			className="flex-shrink-0 w-48 p-4 bg-white rounded-2xl shadow-md hover:shadow-lg transition"
-		>
-			<img
-				src={item.image}
-				alt={item.name}
-				className="w-full h-32 object-cover rounded-xl mb-2"
-			/>
-			<h3 className="text-lg font-semibold truncate">{item.name}</h3>
-			<p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
-		</a>
+		<div className="relative flex-shrink-0 w-48 p-4 bg-white rounded-2xl shadow-md hover:shadow-lg transition">
+			<button
+				onClick={() => onDelete(item.id)}
+				className="cursor-pointer absolute top-2 right-2 bg-white text-red-500 rounded-full hover:text-red-600 transition"
+				aria-label="Delete item"
+			>
+				<RemoveIcon />
+			</button>
+			<a href={item.url} className="block">
+				<img
+					src={item.image}
+					alt={item.name}
+					className="w-full h-32 object-cover rounded-xl mb-2"
+				/>
+				<h3 className="text-lg font-semibold truncate">{item.name}</h3>
+				<p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
+			</a>
+		</div>
 	);
 }
 
 export default function ItemsCarousel() {
-	const [data] = useContext(AppContext);
+	const [data, setData] = useContext(AppContext);
 	const items: Item[] = data.items;
+
+	async function deleteItem(id: number) {
+		const rix = data.items.findIndex((i) => i.id == id);
+
+		const suc = await ApiDeleteItem(data.items[rix]!);
+		if (!suc) {
+			showError('Error deleting item');
+			return;
+		}
+		const copy = [...data.items];
+		copy.splice(rix,1);
+
+		setData((prev) => {
+			return { ...prev, items: copy };
+		});
+	}
 
 	const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -190,7 +242,7 @@ export default function ItemsCarousel() {
 			<div ref={carouselRef} className="overflow-x-auto scrollbar-hide">
 				<div className="flex space-x-4 py-4">
 					{items.map((item) => (
-						<ItemCard key={item.id} item={item} />
+						<ItemCard key={item.id} item={item} onDelete={deleteItem} />
 					))}
 				</div>
 			</div>
@@ -213,11 +265,11 @@ function App() {
 	return (
 		<StrictMode>
 			<AppContext.Provider value={[data, setData]}>
-					<ControlPanel />
-					<div className="max-w-1/3">
-						<QueriesTable />
-					</div>
-					<ItemsCarousel />
+				<ControlPanel />
+				<div className="max-w-1/3 my-4">
+					<QueriesTable />
+				</div>
+				<ItemsCarousel />
 			</AppContext.Provider>
 		</StrictMode>
 	);
@@ -230,13 +282,5 @@ ApiGetQueries().then((value) => {
 		});
 	}
 
-	ApiGetItems().then((value) => {
-		if (value.length !== 0) {
-			reduxAtHome.items = value.map((q) => {
-				return { ...q };
-			});
-		}
-
-		createRoot(document.getElementById('root')!).render(<App />);
-	});
+	createRoot(document.getElementById('root')!).render(<App />);
 });
