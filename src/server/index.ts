@@ -263,24 +263,7 @@ async function HandleEndpoint(
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
 
 			const dtr: { id: number; name: string } = await req.json();
-			console.log(`Rename item with id ${dtr.id} to ${dtr.name}`);
-			return RESP_EMPTY_OK;
 			return maybeResponse(await stub.itemsRename(dtr.id, dtr.name));
-
-		case '/testing':
-			const ATI = await stub.itemsGetAll();
-			const IOLI = ATI[ATI.length - 1].id;
-
-			await stub.itemsAdd({
-				id: IOLI + 1,
-				image: `https://picsum.photos/id/${Math.floor(Math.random() * 300)}/200/300`,
-				price: 69,
-				name: 'Testing item for testing purposes',
-				url: `https://item-${IOLI}`,
-				query: 'another test',
-			});
-
-			return RESP_EMPTY_OK;
 
 		default:
 			return new Response(null, { status: 404, statusText: 'Invalid endpoint' });
