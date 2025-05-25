@@ -10,6 +10,9 @@ export const ENDPOINT_GET_QUERIES = '/api/getQueries';
 // {id:string} -> void
 export const ENDPOINT_DELETE_QUERY = '/api/deleteQuery';
 
+// void -> ItemsRow[]
+export const ENDPOINT_GET_ITEMS = '/api/getItems';
+
 type integer = number;
 type url = string;
 

@@ -1,17 +1,20 @@
 import React from 'react';
-import type { QueriesRow } from '../shared';
+import type { ItemsRow, QueriesRow } from '../shared';
 
-interface Query extends QueriesRow {
+export interface Query extends QueriesRow {
 	selected: boolean;
 }
+export interface Item extends ItemsRow {}
 
 export interface AppData {
 	queries: Query[];
+	items: Item[];
 }
 
 export function EmptyData(): AppData {
 	return {
 		queries: [],
+		items: [],
 	};
 }
 

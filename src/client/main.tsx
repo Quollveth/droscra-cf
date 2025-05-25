@@ -1,16 +1,18 @@
-import { StrictMode, useContext, useState } from 'react';
+import { StrictMode, useContext, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './assets/main.css';
 
 import Swal from 'sweetalert2';
 
-import { AppContext, EmptyData, type AppData } from './context';
+import { AppContext, EmptyData, type AppData, type Item } from './context';
 import { AddIcon } from './assets/addIcon';
 import { RemoveIcon } from './assets/removeIcon';
 import { CheckIcon } from './assets/checkIcon';
-import { ApiDeleteQuery, ApiGetQueries, ApiSaveQuery } from './api';
-import type { QueriesRow } from '../shared';
+import { ApiDeleteQuery, ApiGetItems, ApiGetQueries, ApiSaveQuery } from './api';
+import type { ItemsRow, QueriesRow } from '../shared';
 import { SyncIcon } from './assets/syncIcon';
+import { RightIcon } from './assets/rightIcon';
+import { LeftIcon } from './assets/leftIcon';
 
 function showError(e: string) {
 	Swal.fire({
@@ -141,6 +143,68 @@ function QueriesTable() {
 	);
 }
 
+function ItemCard({ item }: { item: Item }) {
+	return (
+		<a
+			href={item.url}
+			className="flex-shrink-0 w-48 p-4 bg-white rounded-2xl shadow-md hover:shadow-lg transition"
+		>
+			<img
+				src={item.image}
+				alt={item.name}
+				className="w-full h-32 object-cover rounded-xl mb-2"
+			/>
+			<h3 className="text-lg font-semibold truncate">{item.name}</h3>
+			<p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
+		</a>
+	);
+}
+
+export default function ItemsCarousel() {
+	const [data] = useContext(AppContext);
+	const items: Item[] = data.items;
+
+	const carouselRef = useRef<HTMLDivElement>(null);
+
+	const scrollLeft = () => {
+		if (carouselRef.current) {
+			carouselRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+		}
+	};
+
+	const scrollRight = () => {
+		if (carouselRef.current) {
+			carouselRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+		}
+	};
+
+	return (
+		<div className="relative">
+			<button
+				onClick={scrollLeft}
+				className="cursor-pointer absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
+			>
+				<LeftIcon />
+			</button>
+
+			<div ref={carouselRef} className="overflow-x-auto scrollbar-hide">
+				<div className="flex space-x-4 py-4">
+					{items.map((item) => (
+						<ItemCard key={item.id} item={item} />
+					))}
+				</div>
+			</div>
+
+			<button
+				onClick={scrollRight}
+				className="cursor-pointer absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
+			>
+				<RightIcon />
+			</button>
+		</div>
+	);
+}
+
 const reduxAtHome: AppData = EmptyData();
 
 function App() {
@@ -149,10 +213,11 @@ function App() {
 	return (
 		<StrictMode>
 			<AppContext.Provider value={[data, setData]}>
-				<ControlPanel />
-				<div className="max-w-1/3 flex flex-col gap-5">
-					<QueriesTable />
-				</div>
+					<ControlPanel />
+					<div className="max-w-1/3">
+						<QueriesTable />
+					</div>
+					<ItemsCarousel />
 			</AppContext.Provider>
 		</StrictMode>
 	);
@@ -165,5 +230,13 @@ ApiGetQueries().then((value) => {
 		});
 	}
 
-	createRoot(document.getElementById('root')!).render(<App />);
+	ApiGetItems().then((value) => {
+		if (value.length !== 0) {
+			reduxAtHome.items = value.map((q) => {
+				return { ...q };
+			});
+		}
+
+		createRoot(document.getElementById('root')!).render(<App />);
+	});
 });

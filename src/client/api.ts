@@ -1,9 +1,10 @@
-import type { QueriesRow } from '../shared';
+import type { ItemsRow, QueriesRow } from '../shared';
 import {
 	ENDPOINT_SAVE_QUERIES,
 	ENDPOINT_GET_QUERIES,
 	ENDPOINT_DELETE_QUERY,
 	ENDPOINT_SAVE_QUERY,
+    ENDPOINT_GET_ITEMS,
 } from '../shared';
 
 export async function ApiGetQueries(): Promise<QueriesRow[]> {
@@ -87,5 +88,26 @@ export async function ApiDeleteQuery(query: QueriesRow): Promise<boolean> {
 	} catch (error) {
 		console.error('ApiDeleteQuery error:', error);
 		return false;
+	}
+}
+
+export async function ApiGetItems(): Promise<ItemsRow[]> {
+	try {
+		const response = await fetch(ENDPOINT_GET_ITEMS, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		});
+
+		if (!response.ok) {
+			throw new Error(`Failed to fetch queries: ${response.statusText}`);
+		}
+
+		const data: ItemsRow[] = await response.json();
+		return data;
+	} catch (error) {
+		console.error('ApiGetQueries error:', error);
+		return [];
 	}
 }

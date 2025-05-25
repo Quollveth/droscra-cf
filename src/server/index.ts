@@ -1,6 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
 	ENDPOINT_DELETE_QUERY,
+	ENDPOINT_GET_ITEMS,
 	ENDPOINT_GET_QUERIES,
 	ENDPOINT_SAVE_QUERY,
 	type ItemsRow,
@@ -178,6 +179,23 @@ function jsonResponse(data: any): Response {
 	return resp;
 }
 
+const fakeItems = (function (): ItemsRow[] {
+	const toRet: ItemsRow[] = [];
+
+	for (let i = 0; i < 10; i++) {
+		toRet.push({
+			id: i,
+			name: `ITEM ${i} NAME`,
+			url: '',
+			image: `https://picsum.photos/id/${i * 3}/200/300`,
+			price: 7.6 * i,
+			query: '',
+		});
+	}
+
+	return toRet;
+})();
+
 async function HandleEndpoint(
 	req: Request,
 	stub: DurableObjectStub<DroscraObj>,
@@ -204,6 +222,11 @@ async function HandleEndpoint(
 			const qtd: { id: string } = await req.json();
 			const qitd = qtd.id;
 			return maybeResponse(await stub.queriesDelete(qitd));
+
+		case ENDPOINT_GET_ITEMS:
+			//prettier-ignore
+			if(req.method !== 'GET'){return RESP_UNSUPPORTED}
+			return Response.json(fakeItems);
 
 		default:
 			return new Response(null, { status: 404, statusText: 'Invalid endpoint' });
