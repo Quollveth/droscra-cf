@@ -33,6 +33,39 @@ function showError(e: string) {
 	});
 }
 
+function TestPanel() {
+	const output = useRef<HTMLTextAreaElement>(null);
+	async function test() {
+		const response = await fetch('/api/testing', {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		});
+
+		output.current!.value = JSON.stringify(await response.json());
+	}
+
+	return (
+		<div className="flex flex-row">
+			<li>
+				<button
+					onClick={test}
+					className="rounded cursor-pointer w-full p-2 bg-green-100 hover:bg-green-200 text-green-700 border border-green-200"
+				>
+					<p>test</p>
+				</button>
+			</li>
+			<textarea
+				ref={output}
+				readOnly
+				className="resize-none w-full"
+				style={{ minHeight: '500px', height: '100%' }}
+			/>
+		</div>
+	);
+}
+
 function ControlPanel() {
 	const [data, setData] = useContext(AppContext);
 
@@ -245,7 +278,7 @@ export default function ItemsCarousel() {
 	}
 
 	async function renameItem(id: number, name: string) {
-		await ApiRenameItem(id,name);
+		await ApiRenameItem(id, name);
 	}
 
 	const debouncedRename = useMemo(
@@ -266,6 +299,10 @@ export default function ItemsCarousel() {
 			carouselRef.current.scrollBy({ left: 200, behavior: 'smooth' });
 		}
 	};
+
+	if (items.length === 0) {
+		return <></>;
+	}
 
 	return (
 		<div className="relative">
@@ -307,6 +344,8 @@ function App() {
 	return (
 		<StrictMode>
 			<AppContext.Provider value={[data, setData]}>
+				<TestPanel />
+
 				<ControlPanel />
 				<div className="max-w-1/3 my-4">
 					<QueriesTable />

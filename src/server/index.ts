@@ -265,6 +265,13 @@ async function HandleEndpoint(
 			const dtr: { id: number; name: string } = await req.json();
 			return maybeResponse(await stub.itemsRename(dtr.id, dtr.name));
 
+
+
+
+		case '/api/testing':
+			//TODO: remove this endpoint
+			return jsonResponse("hello world");
+
 		default:
 			return new Response(null, { status: 404, statusText: 'Invalid endpoint' });
 	}
