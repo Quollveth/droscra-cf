@@ -11,6 +11,7 @@
 		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {
+		"@cloudflare/puppeteer": "^1.0.2",
 		"@cloudflare/workers-types": "^4.20250510.0",
 		"@eslint/js": "^9.25.0",
 		"@types/node": "^22.15.17",
@@ -26,7 +27,6 @@
 		"wrangler": "^4.14.4"
 	},
 	"dependencies": {
-		"@cloudflare/puppeteer": "^1.0.2",
 		"@tailwindcss/vite": "^4.1.7",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",

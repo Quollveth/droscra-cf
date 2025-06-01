@@ -10,6 +10,8 @@ import {
 	type ItemsRow,
 	type QueriesRow,
 } from '../shared';
+import type { Browser, BrowserWorker } from '@cloudflare/puppeteer';
+import puppeteer from '@cloudflare/puppeteer';
 
 const DB_CREATE_QUERY = `
 	CREATE TABLE IF NOT EXISTS queries(
@@ -23,7 +25,36 @@ const DB_CREATE_QUERY = `
 		image TEXT,
 		price REAL,
 		query TEXT
-	);`;
+	);
+`;
+
+const RESP_EMPTY_OK = new Response(null, { status: 204 });
+const RESP_UNSUPPORTED = new Response(null, {
+	status: 405,
+	statusText: 'This endpoint does not support this method',
+});
+const RESP_EMPTY_BAD = new Response(null, { status: 501 });
+function maybeResponse(error: Error | null): Response {
+	if (error === null) {
+		return RESP_EMPTY_OK;
+	}
+
+	return new Response(JSON.stringify(error), {
+		status: 500,
+		statusText: 'Internal Server Error',
+	});
+}
+function jsonResponse(data: any): Response {
+	// exists in case headers (like cors) need to be setup for all responses
+	const resp = Response.json(data);
+	return resp;
+}
+
+const PAGES_TO_SCRAPE: string[] = [
+	'https://www.temu.com/br/search_result.html?search_key=%%',
+	'https://shopee.com.br/search?keyword=%%',
+	'https://pt.aliexpress.com/w/wholesale-%%.html',
+];
 
 export class DroscraObj extends DurableObject<Env> {
 	storage: DurableObjectStorage;
@@ -33,6 +64,8 @@ export class DroscraObj extends DurableObject<Env> {
 		this.storage = ctx.storage;
 		this.storage.sql.exec(DB_CREATE_QUERY);
 	}
+
+	/*---- Query Operations ----*/
 
 	async queriesGet(): Promise<QueriesRow[]> {
 		const result = this.storage.sql.exec('SELECT * FROM queries;');
@@ -88,6 +121,8 @@ export class DroscraObj extends DurableObject<Env> {
 			return new Error('Error deleting query');
 		}
 	}
+
+	/*---- Item Operations ----*/
 
 	async itemsGetAll(): Promise<ItemsRow[]> {
 		const result = this.storage.sql.exec('SELECT * FROM items;');
@@ -179,33 +214,22 @@ export class DroscraObj extends DurableObject<Env> {
 			return new Error('Error deleting item');
 		}
 	}
+
 }
 
-const RESP_EMPTY_OK = new Response(null, { status: 204 });
-const RESP_UNSUPPORTED = new Response(null, {
-	status: 405,
-	statusText: 'This endpoint does not support this method',
-});
-
-function maybeResponse(error: Error | null): Response {
-	if (error === null) {
-		return RESP_EMPTY_OK;
-	}
-
-	return new Response(JSON.stringify(error), {
-		status: 500,
-		statusText: 'Internal Server Error',
-	});
-}
-function jsonResponse(data: any): Response {
-	// exists in case headers (like cors) need to be setup for all responses
-	const resp = Response.json(data);
-	return resp;
+async function scrape(env: Env): Promise<Response> {
+	const browser = await puppeteer.launch(env.BROWSER);
+	const page = await browser.newPage();
+	await page.goto('https://example.com');
+	const metrics = await page.metrics();
+	await browser.close();
+	return Response.json(metrics);
 }
 
 async function HandleEndpoint(
 	req: Request,
 	stub: DurableObjectStub<DroscraObj>,
+	env: Env,
 ): Promise<Response> {
 	const pathname = new URL(req.url).pathname;
 
@@ -214,14 +238,12 @@ async function HandleEndpoint(
 			//prettier-ignore
 			if(req.method !== 'GET'){return RESP_UNSUPPORTED}
 			return jsonResponse(await stub.queriesGet());
-
 		case ENDPOINT_SAVE_QUERY:
 			//prettier-ignore
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
 			const qta: QueriesRow = await req.json();
 			//TODO: valdiate
 			return maybeResponse(await stub.queriesAdd(qta));
-
 		case ENDPOINT_DELETE_QUERY:
 			//prettier-ignore
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
@@ -229,12 +251,10 @@ async function HandleEndpoint(
 			//TODO: valdiate
 			const qitd = qtd.id;
 			return maybeResponse(await stub.queriesDelete(qitd));
-
 		case ENDPOINT_GET_ITEMS:
 			//prettier-ignore
 			if(req.method !== 'GET'){return RESP_UNSUPPORTED}
 			return jsonResponse(await stub.itemsGetAll());
-
 		case ENDPOINT_DELETE_ITEM:
 			//prettier-ignore
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
@@ -242,7 +262,6 @@ async function HandleEndpoint(
 			//TODO: valdiate
 			const iitd = itd.id;
 			return maybeResponse(await stub.itemsDelete(iitd));
-
 		case ENDPOINT_GET_ITEMS_QUERIES:
 			//prettier-ignore
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
@@ -257,7 +276,6 @@ async function HandleEndpoint(
 			}
 
 			return jsonResponse(await stub.itemsGetFromQueries(qts));
-
 		case ENDPOINT_RENAME_ITEM:
 			//prettier-ignore
 			if(req.method !== 'POST'){return RESP_UNSUPPORTED}
@@ -265,12 +283,8 @@ async function HandleEndpoint(
 			const dtr: { id: number; name: string } = await req.json();
 			return maybeResponse(await stub.itemsRename(dtr.id, dtr.name));
 
-
-
-
 		case '/api/testing':
-			//TODO: remove this endpoint
-			return jsonResponse("hello world");
+			return await scrape(env);
 
 		default:
 			return new Response(null, { status: 404, statusText: 'Invalid endpoint' });
@@ -283,7 +297,7 @@ export default {
 		const stub = env.DROSCRA_OBJ.get(id);
 
 		try {
-			return HandleEndpoint(request, stub);
+			return HandleEndpoint(request, stub, env);
 		} catch (e) {
 			console.error(e);
 			return new Response(null, {

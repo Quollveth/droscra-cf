@@ -1,6 +1,10 @@
 name = "droscra"
 main = "src/server/index.ts"
 compatibility_date = "2025-05-07"
+workers_dev = true
+compatibility_flags = ["nodejs_compat_v2"]
+
+browser = { binding = "BROWSER" }
 
 [observability]
 enabled = true
@@ -8,6 +12,10 @@ enabled = true
 [[durable_objects.bindings]]
 class_name = "DroscraObj"
 name = "DROSCRA_OBJ"
+
+[[durable_objects.binding]]
+class_name = "Scraper"
+name = "BROWSER"
 
 [build]
 command = "npm run build"
@@ -19,3 +27,4 @@ binding = "assets"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["DroscraObj"]
+new_classes = ["Scraper"]
